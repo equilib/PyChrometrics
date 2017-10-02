@@ -354,8 +354,13 @@ class PsychroCalcs():
         
         return 1 / self.specific_volume(T_db, RH)
     
-    def sensible_enthalpy( self ):
-        pass
+    def sensible_enthalpy( self, T_db, RH ):
+    
+        T_wb = self.T_wb_iter(T_db, RH)
+        
+        Cp_da = self.__properties.Cp_dry_air(T_db, T_wb)
+        
+        return( Cp_da * T_db )
     
     def latent_enthalpy( self ):
         pass
@@ -365,7 +370,7 @@ class PsychroCalcs():
     
     def get_pressure(self):
         
-        print( self.__abs_pressure )
+        return( self.__abs_pressure )
 
 
 def main():
@@ -381,8 +386,8 @@ def main():
     print( "Hum Rat f(): %.6f " %x.W1( 50, 42.5958 ) )
     print( "Density %.4f " %x.density( 50, 0.55 ) )
     
-    x.get_pressure()
-
+    print( "Sensible Enthalpy: %.2f " %x.sensible_enthalpy(50, 0.55) )
+    
 
 if __name__ == "__main__": 
     main()
