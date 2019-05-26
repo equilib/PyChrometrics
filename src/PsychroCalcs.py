@@ -46,28 +46,28 @@ class PsychroCalcs():
         
         self.__elevation = elevation if (elevation != None) else 0.0
         
-        self.__abs_pressure = abs_pressure if abs_pressure != None else self.__std_atm_pressure()
+        self.__abs_pressure = abs_pressure if abs_pressure != None else self.P_atm_std()
            
-    def __std_atm_pressure( self ):
+    def P_atm_std( self ):
         '''
         '''
         return ( 14.696 * ( 1 - self.__elevation * 6.8754e-06 ) ** 5.2559 )
     
-    def __partial_vap_pressure( self, T_db, RH ):
+    def __P_v_partial( self, T_db, RH ):
         '''
         '''
         
-        P_ws = self.__sat_vapor_pressure( T_db )
+        P_ws = self.P_v_sat( T_db )
         
         return( RH * P_ws )
         
-    def __sat_vapor_pressure( self, T_db ):
+    def P_v_sat( self, T_db ):
         
-        return( self.__sat_pressure_ice( T_db ) if T_db < self.__properties.FREEZING_POINT() else self.__sat_pressure_water( T_db ) )
+        return( self.P_ice_sat( T_db ) if T_db < self.__properties.FREEZING_POINT() else self.P_w_sat( T_db ) )
     
-    def __sat_pressure_ice( self, T_db ):
+    def P_ice_sat( self, T_db ):
         '''
-        __sat_pressure_ice - returns the water vapor saturation pressure over ice (psia)
+        P_ice_sat - returns the water vapor saturation pressure over ice (psia)
         Hyland-Wexler Correlations - 1983 - ASHRAE 2001
         
         @param T_db - dry bulb temperature
@@ -97,9 +97,9 @@ class PsychroCalcs():
                     
         return ( self.convert.Pa_to_psia( P_is ) )
         
-    def __sat_pressure_water( self, T_db ):
+    def P_w_sat( self, T_db ):
         '''
-        __sat_pressure_water - returns the water vapor saturation pressure over water (psia)
+        P_w_sat - returns the water vapor saturation pressure over water (psia)
         Hyland-Wexler Correlations - 1983 - ASHRAE 2001
         
         @param T_db - Thermodynamic temperature ( K )
@@ -153,7 +153,7 @@ class PsychroCalcs():
         '''
 
         T_wb = T_db                     # Initial guess at Twb
-        W = self.humidity_ratio( T_db, RH )
+        W = self.W( T_db, RH )
         W0 = self.W0( T_db, T_wb )
         epsilon = 1e-6                  # stop condition
         
@@ -215,7 +215,7 @@ class PsychroCalcs():
               0.17074,
               1.2063 ]
         
-        P_w = self.__partial_vap_pressure( T_db, RH )       # psia
+        P_w = self.__P_v_partial( T_db, RH )       # psia
         a = log( P_w )                                      # ln( psia )
         T_dp = 0                                            # deg C
         
@@ -231,9 +231,9 @@ class PsychroCalcs():
     def RH( self ):
         pass
     
-    def humidity_ratio( self, T_db, RH ):
+    def W( self, T_db, RH ):
         '''
-        humidity_ratio - function calculates the humidity ratio given dry bulb temperature and relative humidity
+        W - function calculates the humidity ratio given dry bulb temperature and relative humidity
         
         @param - T_db: dry bulb temperature (deg F)
         @param - RH: relative humidity ( lbm vapor / lbm dry air )
@@ -243,15 +243,16 @@ class PsychroCalcs():
         
         P_atm = self.__abs_pressure
         
-        Pws = self.__sat_vapor_pressure( T_db )
+        # Pws = self.P_v_sat( T_db )
+        Pws = self.P_w_sat( T_db )
         
         MMR = self.__properties.get_molec_mass_ratio()
         
         return ( MMR * ( Pws * RH /( P_atm - Pws * RH) ) ) # equation is from ASHRAE 2002 / 2005
     
-    def sat_humidity_ratio( self, T_db):
+    def W_sat( self, T_db):
         '''
-        sat_humidity_ratio - function calculates the saturated humidity ratio based on dry bulb temperature
+        sat_W - function calculates the saturated humidity ratio based on dry bulb temperature
         
         @param - T_db: dry bulb temperature
         @return - saturated humidity ratio (lbm/lbm)
@@ -260,7 +261,7 @@ class PsychroCalcs():
         
         P_atm = self.__abs_pressure
         
-        Pws = self.__sat_vapor_pressure( T_db )
+        Pws = self.P_v_sat( T_db )
         
         MMR = self.__properties.get_molec_mass_ratio()
         
@@ -288,7 +289,7 @@ class PsychroCalcs():
         Cp_w = self.__properties.Cp_water                                   # Cp of water function
         Cp_da = self.__properties.Cp_dry_air                                # Cp of dry air function
         Cp_v = self.__properties.Cp_vapor                                   # Cp of water vapor function
-        Ws_wb = self.sat_humidity_ratio                                     # saturated humidity ratio Ws(Twb)  
+        Ws_wb = self.W_sat                                     # saturated humidity ratio Ws(Twb)  
         
         a = ( ( h_fg - ( Cp_w( Twb ) - Cp_v( Tdb ) ) * Twb ) * Ws_wb( Twb ) - Cp_da( Tdb, Twb ) * ( Tdb - Twb ) )
         b = ( h_fg + Cp_v( Tdb ) * Tdb - Cp_w( Twb ) * Twb )
@@ -316,15 +317,22 @@ class PsychroCalcs():
         Cp_da = self.__properties.get_const_Cp_dry_air()                        # specific heat of dry air
         Cp_w = self.__properties.get_const_Cp_water()                           #  specific heat of water 
         Cp_v = self.__properties.get_const_Cp_vapor()                           # specific heat of vapor 
-        Ws_wb = self.sat_humidity_ratio                                         # saturated humidity ratio function (pointer) Ws(Twb)  
+        Ws_wb = self.W_sat                                         # saturated humidity ratio function (pointer) Ws(Twb)  
         
         a = ( ( h_fg - ( Cp_w - Cp_v ) * T_wb ) * Ws_wb( T_wb ) - Cp_da * ( T_db - T_wb ) )
         b = ( h_fg + Cp_v * T_db - Cp_w * T_wb )
         
         return ( a / b )
     
-    def grains_moisture( self ):
-        pass
+    def grains_moisture( self, T_db, RH ):
+        ''' 
+        Returns the grains of moisture 
+        '''
+    
+        W = self.W( T_db, RH )
+        grains = self.__properties.GRAINS_PER_LBM()
+
+        return ( grains * W )
     
     def specific_humidity( self ):
         pass
@@ -336,8 +344,8 @@ class PsychroCalcs():
         '''
         '''
         
-        W = self.humidity_ratio( T_db, RH )
-        Ws = self.sat_humidity_ratio( T_db )
+        W = self.W( T_db, RH )
+        Ws = self.W_sat( T_db )
         
         return ( W / Ws * 100)
     
@@ -345,7 +353,7 @@ class PsychroCalcs():
         '''
         '''
         T_db_R = self.convert.F_to_R( T_db )
-        W = self.humidity_ratio(T_db, RH)
+        W = self.W(T_db, RH)
         P = self.__abs_pressure
         
         return 0.3704 * T_db_R * ( 1 + 1.6078 * W ) / P
@@ -354,7 +362,7 @@ class PsychroCalcs():
         
         return 1 / self.specific_volume(T_db, RH)
     
-    def sensible_enthalpy( self, T_db, RH ):
+    def enthalpy_dry_air( self, T_db, RH ):
     
         T_wb = self.T_wb_iter(T_db, RH)
         
@@ -362,11 +370,25 @@ class PsychroCalcs():
         
         return( Cp_da * T_db )
     
-    def latent_enthalpy( self ):
-        pass
+    def enthalpy_vapor( self, T_db, RH ):
+        '''
+        Returns the latent enthalpy 
+        h_v = W*(c_pv * T + h_fg)
+        '''
+
+        W = self.W( T_db, RH )
+        C_pv = self.__properties.Cp_vapor( T_db )
+        h_fg = self.__properties.h_fg()
+
+        return W * (C_pv * T_db + h_fg)
     
-    def total_enthalpy( self ):
-        pass
+    def enthalpy( self, T_db, RH ):
+        '''
+        Returns the enthalpy of moist air (latent and sensible)
+        h = h_da + W * h_v
+        '''
+        return self.enthalpy_dry_air( T_db, RH ) + self.enthalpy_vapor( T_db, RH )
+
     
     def get_pressure(self):
         
@@ -377,16 +399,29 @@ def main():
     pass
 
     x = PsychroCalcs( elevation = 5280 )
+    rh = 0.55
+    Tdb = 100
+    Twb = x.T_wb_iter(Tdb, rh)
     
-    print( "T_wb_reg: %.4f " %x.T_wb_regression( 50, 0.55 ) )
-    print( "T_wb_iter: %.4f " %x.T_wb_iter( 50, 0.55 ) )
-    print( "T_dp: %.4f " %x.T_dp( 50, 0.55 ) )
-    print( "Hum Ratio: %.6f " %x.humidity_ratio( 50, 0.55 ) )
-    print( "Hum Rat f(): %.6f " %x.W0( 50, 42.5958 ) )
-    print( "Hum Rat f(): %.6f " %x.W1( 50, 42.5958 ) )
-    print( "Density %.4f " %x.density( 50, 0.55 ) )
+    print( "T_wb_reg: %.4f " %x.T_wb_regression( Tdb, rh ) )
+    print( "T_wb_iter: %.4f " %x.T_wb_iter( Tdb, rh ) )
+    print( "T_dp: %.4f " %x.T_dp( Tdb, rh ) )
+    print( "Hum Ratio: %.6f " %x.W( Tdb, rh ) )
+    print( "Hum Rat f(): %.6f " %x.W0( Tdb, Twb ) )
+    print( "Hum Rat f(): %.6f " %x.W1( Tdb, Twb ) )
+    print( "Density %.4f " %x.density( Tdb, rh ) )
+
+    print( "Grains %.4f  " %x.grains_moisture(Tdb, rh) )
+
+    print( "Sens enthalpy %.4f  " %x.enthalpy_dry_air(Tdb, rh) )
+    print( "Late enthalpy %.4f  " %x.enthalpy_vapor(Tdb, rh) )
     
-    print( "Sensible Enthalpy: %.2f " %x.sensible_enthalpy(50, 0.55) )
+    print( "Enthalpy: %.2f " %x.enthalpy(Tdb, rh) )
+
+    print( "Press atm: %.4f  " %x.P_atm_std() )
+
+    print( "Pw_sat: %.4f  " %x.P_w_sat(Tdb) )
+    print( "Pv_sat: %.4f  " %x.P_v_sat(Tdb) )
     
 
 if __name__ == "__main__": 
