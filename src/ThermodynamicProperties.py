@@ -33,29 +33,29 @@ class MoistAirProperties():
     __GRAINS_PER_LBM = 7000             # 7000 grains of moisture per lbm of air
     __FREEZING_POINT = 32.0             # deg F - freezing point of pure water
     
-    def get_R_dry_air( self ):
+    def R_da( self ):
         return self.__Rda
     
-    def get_R_vapor( self ):
+    def R_da( self ):
         return self.__Rv
     
-    def get_const_Cp_dry_air( self ):
+    def Cp_da_const( self ):
         return self.__cp_da
     
-    def get_const_Cp_water( self ):
+    def Cp_w_const( self ):
         return self.__cp_w
     
-    def get_const_Cp_vapor( self ):
+    def Cp_v_const( self ):
         return self.__cp_v
     
-    def get_enthalpy_vaporization( self ):
-        return self.__h_fg
-    
-    def get_molec_mass_ratio( self ):
-        return self.__molec_mass_ratio
-
     def h_fg( self ):
         return self.__h_fg
+    
+    def MMR( self ):
+        '''
+        Return molecular mass ratio
+        '''
+        return self.__molec_mass_ratio
     
     def FREEZING_POINT( self ):
         return self.__FREEZING_POINT

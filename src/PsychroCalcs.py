@@ -246,7 +246,7 @@ class PsychroCalcs():
         # Pws = self.P_v_sat( T_db )
         Pws = self.P_w_sat( T_db )
         
-        MMR = self.__properties.get_molec_mass_ratio()
+        MMR = self.__properties.MMR()
         
         return ( MMR * ( Pws * RH /( P_atm - Pws * RH) ) ) # equation is from ASHRAE 2002 / 2005
     
@@ -263,7 +263,7 @@ class PsychroCalcs():
         
         Pws = self.P_v_sat( T_db )
         
-        MMR = self.__properties.get_molec_mass_ratio()
+        MMR = self.__properties.MMR()
         
         return ( MMR * Pws /( P_atm - Pws ) ) # equation is from ASHRAE 2002 / 2005
     
@@ -284,7 +284,7 @@ class PsychroCalcs():
         
         '''
     
-        h_fg = self.__properties.get_enthalpy_vaporization()                # Latent Heat of Vaporization (Btu/lbm)
+        h_fg = self.__properties.h_fg()                # Latent Heat of Vaporization (Btu/lbm)
         
         Cp_w = self.__properties.Cp_water                                   # Cp of water function
         Cp_da = self.__properties.Cp_dry_air                                # Cp of dry air function
@@ -313,10 +313,10 @@ class PsychroCalcs():
         
         '''
         
-        h_fg = self.__properties.get_enthalpy_vaporization()                    # Latent Heat of Vaporization (Btu/lbm)        
-        Cp_da = self.__properties.get_const_Cp_dry_air()                        # specific heat of dry air
-        Cp_w = self.__properties.get_const_Cp_water()                           #  specific heat of water 
-        Cp_v = self.__properties.get_const_Cp_vapor()                           # specific heat of vapor 
+        h_fg = self.__properties.h_fg()                    # Latent Heat of Vaporization (Btu/lbm)        
+        Cp_da = self.__properties.Cp_da_const()                        # specific heat of dry air
+        Cp_w = self.__properties.Cp_w_const()                           #  specific heat of water 
+        Cp_v = self.__properties.Cp_v_const()                           # specific heat of vapor 
         Ws_wb = self.W_sat                                         # saturated humidity ratio function (pointer) Ws(Twb)  
         
         a = ( ( h_fg - ( Cp_w - Cp_v ) * T_wb ) * Ws_wb( T_wb ) - Cp_da * ( T_db - T_wb ) )
@@ -398,9 +398,9 @@ class PsychroCalcs():
 def main():
     pass
 
-    x = PsychroCalcs( elevation = 5280 )
+    x = PsychroCalcs( elevation = 5500 )
     rh = 0.55
-    Tdb = 100
+    Tdb = 75
     Twb = x.T_wb_iter(Tdb, rh)
     
     print( "T_wb_reg: %.4f " %x.T_wb_regression( Tdb, rh ) )
