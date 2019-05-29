@@ -14,7 +14,7 @@ init development - 30/09/2017
 
 '''
 
-from Conversions import UnitConversions
+from src.Conversions import UnitConversions
 
 
 class MoistAirProperties():
@@ -36,7 +36,7 @@ class MoistAirProperties():
     def R_da( self ):
         return self.__Rda
     
-    def R_da( self ):
+    def R_v( self ):
         return self.__Rv
     
     def Cp_da_const( self ):

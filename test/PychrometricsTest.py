@@ -1,0 +1,34 @@
+from .src.Pychrometrics import Pychrometrics
+
+
+def main():
+    pass
+
+    x = Pychrometrics( elevation = 5500 )
+    rh = 0.55
+    Tdb = 75
+    Twb = x.T_wb_iter(Tdb, rh)
+    
+    print( "T_wb_reg: %.4f " %x.T_wb_regression( Tdb, rh ) )
+    print( "T_wb_iter: %.4f " %x.T_wb_iter( Tdb, rh ) )
+    print( "T_dp: %.4f " %x.T_dp( Tdb, rh ) )
+    print( "Hum Ratio: %.6f " %x.W( Tdb, rh ) )
+    print( "Hum Rat f(): %.6f " %x.W0( Tdb, Twb ) )
+    print( "Hum Rat f(): %.6f " %x.W1( Tdb, Twb ) )
+    print( "Density %.4f " %x.density( Tdb, rh ) )
+
+    print( "Grains %.4f  " %x.grains_moisture(Tdb, rh) )
+
+    print( "Sens enthalpy %.4f  " %x.enthalpy_dry_air(Tdb, rh) )
+    print( "Late enthalpy %.4f  " %x.enthalpy_vapor(Tdb, rh) )
+    
+    print( "Enthalpy: %.2f " %x.enthalpy(Tdb, rh) )
+
+    print( "Press atm: %.4f  " %x.P_atm_std() )
+
+    print( "Pw_sat: %.4f  " %x.P_w_sat(Tdb) )
+    print( "Pv_sat: %.4f  " %x.P_v_sat(Tdb) )
+    
+
+if __name__ == "__main__": 
+    main()
