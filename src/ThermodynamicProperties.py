@@ -14,7 +14,7 @@ init development - 30/09/2017
 
 '''
 
-from src.Conversions import UnitConversions
+from Conversions import UnitConversions
 
 
 class MoistAirProperties():

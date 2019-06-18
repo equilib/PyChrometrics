@@ -1,4 +1,4 @@
-from .src.Pychrometrics import Pychrometrics
+from .. src.Pychrometrics import Pychrometrics
 
 
 def main():
@@ -28,7 +28,11 @@ def main():
 
     print( "Pw_sat: %.4f  " %x.P_w_sat(Tdb) )
     print( "Pv_sat: %.4f  " %x.P_v_sat(Tdb) )
+
+    e = x.P_v_partial(Tdb,rh)
+    es = x.P_w_sat(Tdb)
     
+    print("RH: %.4f "%(e/es * 100) )
 
 if __name__ == "__main__": 
     main()

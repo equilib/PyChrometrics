@@ -15,9 +15,9 @@ init development - 30/09/2017
 '''
 
 
-from src.Conversions import UnitConversions
+from Conversions import UnitConversions
 
-from src.ThermodynamicProperties import MoistAirProperties
+from ThermodynamicProperties import MoistAirProperties
 
 from math import exp
 from math import log
@@ -53,7 +53,7 @@ class Pychrometrics():
         '''
         return ( 14.696 * ( 1 - self.__elevation * 6.8754e-06 ) ** 5.2559 )
     
-    def __P_v_partial( self, T_db, RH ):
+    def P_v_partial( self, T_db, RH ):
         '''
         '''
         
@@ -215,7 +215,7 @@ class Pychrometrics():
               0.17074,
               1.2063 ]
         
-        P_w = self.__P_v_partial( T_db, RH )       # psia
+        P_w = self.P_v_partial( T_db, RH )       # psia
         a = log( P_w )                                      # ln( psia )
         T_dp = 0                                            # deg C
         
@@ -342,6 +342,7 @@ class Pychrometrics():
     
     def degree_saturation( self, T_db, RH ):
         '''
+        Returns the degree of saturation
         '''
         
         W = self.W( T_db, RH )
@@ -395,6 +396,40 @@ class Pychrometrics():
         return( self.__abs_pressure )
 
 
+def main():
+    pass
 
+    x = Pychrometrics( elevation = 5500 )
+    rh = 0.55
+    Tdb = 75
+    Twb = x.T_wb_iter(Tdb, rh)
+    
+    print( "T_wb_reg: %.4f " %x.T_wb_regression( Tdb, rh ) )
+    print( "T_wb_iter: %.4f " %x.T_wb_iter( Tdb, rh ) )
+    print( "T_dp: %.4f " %x.T_dp( Tdb, rh ) )
+    print( "Hum Ratio: %.6f " %x.W( Tdb, rh ) )
+    print( "Hum Rat f(): %.6f " %x.W0( Tdb, Twb ) )
+    print( "Hum Rat f(): %.6f " %x.W1( Tdb, Twb ) )
+    print( "Density %.4f " %x.density( Tdb, rh ) )
+
+    print( "Grains %.4f  " %x.grains_moisture(Tdb, rh) )
+
+    print( "Sens enthalpy %.4f  " %x.enthalpy_dry_air(Tdb, rh) )
+    print( "Late enthalpy %.4f  " %x.enthalpy_vapor(Tdb, rh) )
+    
+    print( "Enthalpy: %.2f " %x.enthalpy(Tdb, rh) )
+
+    print( "Press atm: %.4f  " %x.P_atm_std() )
+
+    print( "Pw_sat: %.4f  " %x.P_w_sat(Tdb) )
+    print( "Pv_sat: %.4f  " %x.P_v_sat(Tdb) )
+
+    e = x.P_v_partial(Tdb,rh)
+    es = x.P_w_sat(Tdb)
+    
+    print("RH: %.4f "%(e/es * 100) )
+
+if __name__ == "__main__": 
+    main()
 
 
