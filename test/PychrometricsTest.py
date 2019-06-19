@@ -1,5 +1,9 @@
-from .. src.Pychrometrics import Pychrometrics
+import sys
 
+sys.path.append('../')
+
+#from src.Pychrometrics import Pychrometrics
+from PyChrometrics.src.Psychrometrics import Pychrometrics
 
 def main():
     pass

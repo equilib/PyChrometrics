@@ -15,9 +15,9 @@ init development - 30/09/2017
 '''
 
 
-from Conversions import UnitConversions
+from PyChrometrics.src.Conversions import UnitConversions
 
-from ThermodynamicProperties import MoistAirProperties
+from PyChrometrics.src.ThermodynamicProperties import MoistAirProperties
 
 from math import exp
 from math import log

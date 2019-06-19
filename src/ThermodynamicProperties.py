@@ -14,7 +14,7 @@ init development - 30/09/2017
 
 '''
 
-from Conversions import UnitConversions
+from PyChrometrics.src.Conversions import UnitConversions
 
 
 class MoistAirProperties():
@@ -27,7 +27,7 @@ class MoistAirProperties():
     __cp_w = 0.999                      # Btu/(lbm - R) - specific heat capacity of water
     __cp_v = 0.451                      # Btu/(lbm - R) - specific heat capacity of vapor
     #  __h_fg = 970.33                     # enthalpy of vaporization: Btu/lbm - Per Engineering Thermodynamics Steam Tables - Boles
-    __h_fg = 1061                       # enthalpy from Engineering Toolbox https://www.engineeringtoolbox.com/enthalpy-moist-air-d_683.html   *** WHERE DID THIS VALUE COME FROM? ***
+    __h_fg = 1060.9                     # enthalpy from Engineering Toolbox https://www.engineeringtoolbox.com/enthalpy-moist-air-d_683.html   *** WHERE DID THIS VALUE COME FROM? ***
     __molec_mass_ratio = 0.62198        # molecular mass ratio: Mw/Mda (ratio of molecular masses for vapor & dry air)
     
     __GRAINS_PER_LBM = 7000             # 7000 grains of moisture per lbm of air
