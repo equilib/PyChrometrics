@@ -8,9 +8,9 @@ from PyChrometrics.src.Psychrometrics import Pychrometrics
 def main():
     pass
 
-    x = Pychrometrics( elevation = 5500 )
-    rh = 0.55
-    Tdb = 75
+    x = Pychrometrics( elevation = 5000 )
+    rh = 0.22
+    Tdb = 89.0
     Twb = x.T_wb_iter(Tdb, rh)
     
     print( "T_wb_reg: %.4f " %x.T_wb_regression( Tdb, rh ) )
