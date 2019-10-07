@@ -6,11 +6,10 @@ sys.path.append('../')
 from PyChrometrics.src.Psychrometrics import Pychrometrics
 
 def main():
-    #pass
 
     x = Pychrometrics( elevation = 5600 )
-    rh = 0.485
-    Tdb = 68.0
+    rh = 0.653
+    Tdb = 64.3
     Twb = x.T_wb_iter(Tdb, rh)
     
     print( "T_wb_reg: %.4f " %x.T_wb_regression( Tdb, rh ) )
@@ -21,22 +20,9 @@ def main():
     print( "Hum Rat f(): %.6f " %x.W1( Tdb, Twb ) )
     print( "Density %.4f " %x.density( Tdb, rh ) )
 
-    # print( "Grains %.4f  " %x.grains_moisture(Tdb, rh) )
-
-    # print( "Sens enthalpy %.4f  " %x.enthalpy_dry_air(Tdb, rh) )
-    # print( "Late enthalpy %.4f  " %x.enthalpy_vapor(Tdb, rh) )
+    y = x.W(65.3, 0.61) - x.W(59.2, 0.690)
     
-    # print( "Enthalpy: %.2f " %x.enthalpy(Tdb, rh) )
-
-    # print( "Press atm: %.4f  " %x.P_atm_std() )
-
-    # print( "Pw_sat: %.4f  " %x.P_w_sat(Tdb) )
-    # print( "Pv_sat: %.4f  " %x.P_v_sat(Tdb) )
-
-    e = x.P_v_partial(Tdb,rh)
-    es = x.P_w_sat(Tdb)
-    
-    # print("RH: %.4f "%(e/es * 100) )
+    print( "Delta W {:4f}".format(y) )
 
 if __name__ == "__main__": 
     main()
