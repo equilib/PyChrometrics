@@ -50,18 +50,22 @@ class Pychrometrics():
            
     def P_atm_std( self ):
         '''
+        return: standard atmospheric pressure
         '''
         return ( 14.696 * ( 1 - self.__elevation * 6.8754e-06 ) ** 5.2559 )
     
     def P_v_partial( self, T_db, RH ):
         '''
+        P_v_partial - vapor partial pressure
         '''
-        
         P_ws = self.P_v_sat( T_db )
         
         return( RH * P_ws )
         
     def P_v_sat( self, T_db ):
+        '''
+        P_v_sat - saturated vapor partial pressure
+        '''
         
         return( self.P_ice_sat( T_db ) if T_db < self.__properties.FREEZING_POINT() else self.P_w_sat( T_db ) )
     
@@ -127,9 +131,6 @@ class Pychrometrics():
         P_ws = exp( ln_P_ws )
 
         return ( self.convert.Pa_to_psia( P_ws ) )
-        
-    def T_db( self ):
-        pass
     
     def T_wb_iter( 
                   self, 
@@ -216,8 +217,8 @@ class Pychrometrics():
               1.2063 ]
         
         P_w = self.P_v_partial( T_db, RH )       # psia
-        a = log( P_w )                                      # ln( psia )
-        T_dp = 0                                            # deg C
+        a = log( P_w )                           # ln( psia )
+        T_dp = 0                                 # deg C
         
         if ( T_db >= 32.0 ):
             for i in range( len( c ) ):
@@ -228,12 +229,24 @@ class Pychrometrics():
         return ( T_dp )
         
     
-    def RH( self ):
-        pass
+    def RH( self, T_db, T_dp ):
+        '''
+        RH - relative humidity
+        '''
+        Tdb_cel = self.convert.F_to_C(T_db)
+        Tdp_cel = self.convert.F_to_C(T_dp)
+
+        a = 17.625
+        b = 243.04
+
+        A = exp( (a * Tdp_cel)/(b + Tdp_cel) )
+        B = exp( (a * Tdb_cel)/(b + Tdb_cel) )
+
+        return 100 * A/B
     
     def W( self, T_db, RH ):
         '''
-        W - function calculates the humidity ratio given dry bulb temperature and relative humidity
+        Humidity Ratio: W - function calculates the humidity ratio given dry bulb temperature and relative humidity
         
         @param - T_db: dry bulb temperature (deg F)
         @param - RH: relative humidity ( lbm vapor / lbm dry air )
@@ -252,7 +265,7 @@ class Pychrometrics():
     
     def W_sat( self, T_db):
         '''
-        sat_W - function calculates the saturated humidity ratio based on dry bulb temperature
+        saturated humidity ratio: sat_W - function calculates the saturated humidity ratio based on dry bulb temperature
         
         @param - T_db: dry bulb temperature
         @return - saturated humidity ratio (lbm/lbm)
@@ -360,21 +373,28 @@ class Pychrometrics():
         return 0.3704 * T_db_R * ( 1 + 1.6078 * W ) / P
     
     def density( self, T_db, RH ):
-        
-        return 1 / self.specific_volume(T_db, RH)
+        '''
+        Returns the density of moist air based on the specific volume
+        '''
+        v = self.specific_volume(T_db, RH)
+        rho = 1 / v
+        return rho
     
     def enthalpy_dry_air( self, T_db, RH ):
+        '''
+        Returns the enthalpy of dry air
+        h_da = Cp_da * T_db
+        '''
     
         T_wb = self.T_wb_iter(T_db, RH)
-        
         Cp_da = self.__properties.Cp_dry_air(T_db, T_wb)
         
         return( Cp_da * T_db )
     
     def enthalpy_vapor( self, T_db, RH ):
         '''
-        Returns the latent enthalpy 
-        h_v = W*(c_pv * T + h_fg)
+        Returns the latent enthalpy
+        h_v = W * (c_pv * T + h_fg)
         '''
 
         W = self.W( T_db, RH )
@@ -386,9 +406,12 @@ class Pychrometrics():
     def enthalpy( self, T_db, RH ):
         '''
         Returns the enthalpy of moist air (latent and sensible)
-        h = h_da + W * h_v
+        h = h_da + h_v
         '''
-        return self.enthalpy_dry_air( T_db, RH ) + self.enthalpy_vapor( T_db, RH )
+        h_da = self.enthalpy_dry_air(T_db, RH)
+        h_v = self.enthalpy_vapor(T_db, RH)
+
+        return h_da + h_v
 
     
     def get_pressure(self):
