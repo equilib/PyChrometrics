@@ -16,8 +16,13 @@ init development - 30/09/2017
 
 from PyChrometrics.src.Conversions import UnitConversions
 
+import pint
+
 
 class MoistAirProperties():
+
+    qty = pint.UnitRegistry.Quantity
+    u = pint.UnitRegistry()
     
     convert = UnitConversions()
     
@@ -32,6 +37,7 @@ class MoistAirProperties():
     
     __GRAINS_PER_LBM = 7000             # 7000 grains of moisture per lbm of air
     __FREEZING_POINT = 32.0             # deg F - freezing point of pure water
+    __STD_ATM__PRESSURE = 
     
     def R_da( self ):
         return self.__Rda

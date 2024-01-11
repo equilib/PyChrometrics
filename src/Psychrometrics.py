@@ -7,7 +7,8 @@ Library of typical Psychrometric functions
 ** Dependencies **
 1. Conversions.py - library of functions to convert between units
 
-init development - 30/09/2017
+init development - 2017-09-30
+updates - 2024-01-07
 
 @author: Gregory Evans
 @version: 1.0.0
@@ -19,6 +20,8 @@ from PyChrometrics.src.Conversions import UnitConversions
 
 from PyChrometrics.src.ThermodynamicProperties import MoistAirProperties
 
+import pint
+
 from math import exp
 from math import log
 from math import atan
@@ -26,35 +29,66 @@ from math import atan
 class Pychrometrics():
     '''
     '''
+    qty = pint.UnitRegistry.Quantity        # qty points to pint Quantity comprised of magnitude and unit
+    u = pint.UnitRegistry()
     
     __properties = MoistAirProperties()
     convert = UnitConversions()
+    __STD_ATM_PRESSURE = qty(14.696, 'psi')  # psia - std atm pressure at sea level (0 ft)
+    __MIN_ELEV = qty(-1_400, 'ft')           # lowest acceptable elevation - Dead Sea (ft)  
+    __MAX_ELEV = qty(30_000, 'ft')           # highest acceptable elevation - Mt. Everest (ft)
     
-    __elevation = 0                     # ft - default elevation of 0
-    __abs_pressure = 0                  # psia - default absolute atmospheric pressure of 0 psia
     
-    
-    def __init__(
-                 self,
-                 elevation = None,
-                 abs_pressure = None,
-                 ):
+    def __init__(self,
+                 input_val : qty,
+                 input_type : str = "elevation"):
         '''
-        @TODO - calculate elevation given pressure
-              - throw an Exception when either elevation or pressure is not provided
+        @TODO - throw an Exception when either elevation or pressure is not provided
         '''
+        self.__elevation = None
+        self.__abs_pressure = None
+
+        if input_type.lower() == "elevation":
+            self.__set_elevation(input_val)
+        elif input_type.lower() == "pressure":
+            self.__set_pressure(input_val)
+
+
+    def __set_elevation(self,
+                        elevation : qty):
         
-        self.__elevation = elevation if (elevation != None) else 0.0
+        if self.__MIN_ELEV < elevation <= self.__MAX_ELEV:
+            self.__elevation = elevation
+            self.__abs_pressure = self.P_atm_std(elevation)
+        else:
+            raise ValueError(f"Elevation is out of bounds. {self.__MIN_ELEV} < elevation <= {self.__MAX_ELEV}")
         
-        self.__abs_pressure = abs_pressure if abs_pressure != None else self.P_atm_std()
-           
-    def P_atm_std( self ):
+    def __set_pressure(self,
+                       pressure: qty):
+        
+        MIN_PRES = self.P_atm_std(self.__MIN_ELEV)
+        MAX_PRES = self.P_atm_std(self.__MAX_ELEV)
+
+        if MAX_PRES <= pressure <= MAX_PRES:
+            self.__abs_pressure = pressure
+        else:
+            raise ValueError(f"Pressure is out of bounds. {MIN_PRES} < pressure <= {MAX_PRES}")
+        
+
+    def P_atm_std(self,
+                  elevation : qty) -> float:
         '''
-        return: standard atmospheric pressure
+        return: atmospheric pressure at elevation in psia
         '''
-        return ( 14.696 * ( 1 - self.__elevation * 6.8754e-06 ) ** 5.2559 )
+        k = self.qty(6.8754e-06, 'ft**-1')   # define const for calc of elevation
+
+        P_atm = self.__STD_ATM_PRESSURE * (1 - elevation * k) ** 5.2559
+
+        return P_atm
     
-    def P_v_partial( self, T_db, RH ):
+    def P_v_partial(self,
+                    T_db : qty,
+                    RH : qty ) -> qty:
         '''
         P_v_partial - vapor partial pressure
         '''
@@ -62,14 +96,16 @@ class Pychrometrics():
         
         return( RH * P_ws )
         
-    def P_v_sat( self, T_db ):
+    def P_v_sat(self, 
+                T_db : qty) -> qty:
         '''
         P_v_sat - saturated vapor partial pressure
         '''
-        
+               
         return( self.P_ice_sat( T_db ) if T_db < self.__properties.FREEZING_POINT() else self.P_w_sat( T_db ) )
     
-    def P_ice_sat( self, T_db ):
+    def P_ice_sat( self, 
+                   T_db : qty ) -> qty:
         '''
         P_ice_sat - returns the water vapor saturation pressure over ice (psia)
         Hyland-Wexler Correlations - 1983 - ASHRAE 2001
@@ -78,30 +114,36 @@ class Pychrometrics():
         @return saturation vapor pressure over ice (psia)
         '''
                 
-        m = [ -0.56745359e04,
-              -.51523058,
-              -0.009677843,
-               0.62215701e-6,
-               0.20747825e-08,
-              -0.94840240e-12,
-               0.41635019e01]
-           
-        # ln(Pw) = Sum(m_i * T^i-1, i = 0, 5) + m_6 * ln(T)
-        # natural log of saturation vapor pressure for ice
-        ln_P_is = 0
+        # m = [ -0.56745359e04,
+        #       -.51523058,
+        #       -0.009677843,
+        #        0.62215701e-6,
+        #        0.20747825e-08,
+        #       -0.94840240e-12,
+        #        0.41635019e01]
+
+        C = [-5.6745359e03,
+             6.3925247,
+             -9.677843e-03,
+             6.2215701e-07,
+             2.0747825e-09,
+             -9.4840240e-13,
+             4.1635019e0 ]
         
         # convert dry bulb temperature in deg F to thermodynamic temperature in K
-        T_abs = self.convert.C_to_K( self.convert.F_to_C( T_db ) )
+        T_abs = T_db.to('K')
+        T = T_abs.magnitude
+
+        ln_P_is = C[0] / T + C[1] + C[2] * T + C[3] * T**2 + C[4] * T**3 + C[5] * T**4 + C[6] * log(T)
+
+        P_is = exp(ln_P_is)
+
+        P_is = self.qty(P_is, 'Pa')
+
+        return( P_is.to('psi') )
         
-        for i in range( -1, len( m ) - 1 ):
-            
-            ln_P_is += m[ i + 1 ] * T_abs ** i if ( i < len( m ) - 2 ) else m[ i + 1 ] * log( T_abs )
-                              
-        P_is = exp( ln_P_is )
-                    
-        return ( self.convert.Pa_to_psia( P_is ) )
-        
-    def P_w_sat( self, T_db ):
+    def P_w_sat( self, 
+                 T_db : qty) -> qty:
         '''
         P_w_sat - returns the water vapor saturation pressure over water (psia)
         Hyland-Wexler Correlations - 1983 - ASHRAE 2001
@@ -110,33 +152,35 @@ class Pychrometrics():
         @return saturation vapor pressure over water (psia)
         '''
         
-        h = [ -0.58002206e04,
-              -5.516256,
-              -0.48640239e-01,
-               0.41764768e-04,
-              -0.14452093e-07,
+        # h = [ -0.58002206e04,
+        #       -5.516256,
+        #       -0.48640239e-01,
+        #        0.41764768e-04,
+        #       -0.14452093e-07,
+        #        6.5459673e00 ]
+        
+        C = [ -5.8002206e03,
+              1.3914994e00,
+              -4.8640239e-02,
+               4.1764768e-05,
+              -1.4452093e-08,
                6.5459673e00 ]
-
-        # ln(Pws) = Sum(h_i * T^1, i = -1, 3) + h_r * ln(T)    
-        # natural log of saturation vapor pressure for water
-        ln_P_ws = 0
         
         # convert dry bulb temperature in deg F to thermodynamic temperature in K
-        T_abs = self.convert.C_to_K( self.convert.F_to_C( T_db ) )
-        
-        for i in range( -1, len( h ) - 1 ):
-            
-            ln_P_ws += h[ i + 1 ] * T_abs ** i if ( i < len( h ) - 2 ) else h[ i + 1 ] * log( T_abs )
-           
-        P_ws = exp( ln_P_ws )
+        T_abs = T_db.to('K')
+        T = T_abs.magnitude
 
-        return ( self.convert.Pa_to_psia( P_ws ) )
+        ln_P_sat = C[0] / T + C[1] + C[2] * T + C[3] * T**2 + C[4] * T**3 + C[5] * log(T)
+
+        P_sat = exp(ln_P_sat)
+
+        P_sat = self.qty(P_sat, 'Pa')
+
+        return( P_sat.to('psi') )
     
-    def T_wb_iter( 
-                  self, 
-                  T_db,
-                  RH 
-                  ):
+    def T_wb_iter(self, 
+                  T_db : float,
+                  RH : float) -> float:
         ''' 
         wet bulb temperature - iterative method 
         
@@ -169,11 +213,9 @@ class Pychrometrics():
         
         return T_wb
     
-    def T_wb_regression( 
-                        self, 
-                        T_db, 
-                        RH 
-                        ):
+    def T_wb_regression(self, 
+                        T_db : float,
+                        RH : float) -> float:
         ''' 
         wet bulb temperature - regression method
         
@@ -244,7 +286,9 @@ class Pychrometrics():
 
         return 100 * A/B
     
-    def W( self, T_db, RH ):
+    def W(self,
+          T_db : qty,
+          RH : qty ):
         '''
         Humidity Ratio: W - function calculates the humidity ratio given dry bulb temperature and relative humidity
         
@@ -413,9 +457,10 @@ class Pychrometrics():
 
         return h_da + h_v
 
-    
-    def get_pressure(self):
-        
+    def pressure(self):
+        '''
+        Returns the absolute pressure
+        '''
         return( self.__abs_pressure )
 
 
