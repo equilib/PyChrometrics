@@ -15,62 +15,70 @@ init development - 30/09/2017
 '''
 
 from PyChrometrics.src.Conversions import UnitConversions
+#from src.Conversions import UnitConversions
 
-import pint
+from PyChrometrics.src.PintSetup import Quantity
 
+qty = Quantity
 
 class MoistAirProperties():
-
-    qty = pint.UnitRegistry.Quantity
-    u = pint.UnitRegistry()
     
     convert = UnitConversions()
     
-    __Rda = 53.352                      # ft-lbf/(lb - R)
-    __Rv = 85.778                       # ft-lbf/(lb - R)
-    __cp_da = 0.240                     # Btu/(lbm - R) - specific heat capacity of dry air
-    __cp_w = 0.999                      # Btu/(lbm - R) - specific heat capacity of water
-    __cp_v = 0.451                      # Btu/(lbm - R) - specific heat capacity of vapor
+    #__Rda = 53.352                      # ft-lbf/(lb - R)
+    __Rda = qty(53.352, 'ft * lbf / (lb * degR)')
+    #__Rv = 85.778                       # ft-lbf/(lb - R)
+    __Rv = qty(85.778, 'ft * lbf / (lb * degR)')
+    #__cp_da = 0.240                     # Btu/(lbm - R) - specific heat capacity of dry air
+    __cp_da = qty(0.240, 'Btu / (lb * degR)')
+    #__cp_w = 0.999                      # Btu/(lbm - R) - specific heat capacity of water
+    __cp_w = qty(0.999, 'Btu / (lb * degR)')
+    #__cp_v = 0.451                      # Btu/(lbm - R) - specific heat capacity of vapor
+    __cp_v = qty(0.451, 'Btu / (lb * degR)')
     #  __h_fg = 970.33                     # enthalpy of vaporization: Btu/lbm - Per Engineering Thermodynamics Steam Tables - Boles
-    __h_fg = 1060.9                     # enthalpy from Engineering Toolbox https://www.engineeringtoolbox.com/enthalpy-moist-air-d_683.html   *** WHERE DID THIS VALUE COME FROM? ***
-    __molec_mass_ratio = 0.62198        # molecular mass ratio: Mw/Mda (ratio of molecular masses for vapor & dry air)
+    #__h_fg = 1060.9                     # enthalpy from Engineering Toolbox https://www.engineeringtoolbox.com/enthalpy-moist-air-d_683.html   *** WHERE DID THIS VALUE COME FROM? ***
+    __h_fg = qty(1069.9, 'Btu / lb')
+    #__molec_mass_ratio = 0.62198        # molecular mass ratio: Mw/Mda (ratio of molecular masses for vapor & dry air)
+    __molec_mass_ratio = qty(0.62198)
+
     
-    __GRAINS_PER_LBM = 7000             # 7000 grains of moisture per lbm of air
-    __FREEZING_POINT = 32.0             # deg F - freezing point of pure water
-    __STD_ATM__PRESSURE = 
+    __GRAINS_PER_LBM = qty(7000,'grains')               # 7000 grains of moisture per lbm of air
+    __FREEZING_POINT = qty(32.0, 'degF')                # deg F - freezing point of pure water
+    #__STD_ATM__PRESSURE = qty(14.696, 'psi')
     
-    def R_da( self ):
+    def R_da( self ) -> qty:
         return self.__Rda
     
-    def R_v( self ):
+    def R_v( self ) -> qty:
         return self.__Rv
     
-    def Cp_da_const( self ):
+    def Cp_da_const( self ) -> qty:
         return self.__cp_da
     
-    def Cp_w_const( self ):
+    def Cp_w_const( self ) -> qty:
         return self.__cp_w
     
-    def Cp_v_const( self ):
+    def Cp_v_const( self ) -> qty:
         return self.__cp_v
     
-    def h_fg( self ):
+    def h_fg( self ) -> qty:
         return self.__h_fg
     
-    def MMR( self ):
+    def MMR( self ) -> qty:
         '''
         Return molecular mass ratio
         '''
         return self.__molec_mass_ratio
     
-    def FREEZING_POINT( self ):
+    def FREEZING_POINT( self ) -> qty:
         return self.__FREEZING_POINT
 
-    def GRAINS_PER_LBM( self ):
+    def GRAINS_PER_LBM( self ) -> qty:
         return self.__GRAINS_PER_LBM
     
 
-    def Cp_water( self, T_wb ):
+    def Cp_water( self, 
+                  T_wb : qty ) -> qty:
         '''
         Cp_water - specific heat capacity of water
         
@@ -86,15 +94,18 @@ class MoistAirProperties():
         
         '''
         
-        T_wb = self.convert.F_to_C( T_wb )
+        #T_wb = self.convert.F_to_C( T_wb )
+        T_wb = T_wb.to('degC')
         
         # convert from J/kg-C to kJ/kg-C
-        Cp_w = ( 0.0265 * T_wb ** 2 - 1.7688 * T_wb + 4205.6 ) * 1e-3
+        Cp_w = ( 0.0265 * T_wb.magnitude ** 2 - 1.7688 * T_wb.magnitude + 4205.6 ) * 1e-3
+        Cp_w = qty(Cp_w, 'kJ / (kg * K)')
         
-        return ( self.convert.kJ_kgK_2_Btu_lbF( Cp_w ) )
+        return Cp_w.to('Btu / (lb * degF)')
     
     
-    def Cp_vapor( self, T_db ):
+    def Cp_vapor( self, 
+                  T_db : qty ) -> qty:
         '''
         Cp_vapor - specific heat capacity of water vapor
         
@@ -110,14 +121,19 @@ class MoistAirProperties():
         
         '''
         
-        T_db = self.convert.F_to_C( T_db )
+        #T_db = self.convert.F_to_C( T_db )
+        Tdb = Tdb.to('degC')
+
         # convert from J/kg-C to kJ/kg-C
-        Cp_vapor = ( 0.0016 * T_db ** 2 + 0.1546 * T_db + 1858.7 ) * 1e-3
+        Cp_vapor = ( 0.0016 * T_db.magnitude ** 2 + 0.1546 * T_db.magnitude + 1858.7 ) * 1e-3
+        Cp_vapor = qty(Cp_vapor, 'kJ / (kg * K)')
         
-        return ( self.convert.kJ_kgK_2_Btu_lbF( Cp_vapor ) )
+        return Cp_vapor.to('Btu / (lb * degF)')
     
     
-    def Cp_dry_air( self, T_db, T_wb ):
+    def Cp_dry_air( self, 
+                    T_db : qty, 
+                    T_wb : qty ) -> qty:
         '''
         Cp_dry_air - specific heat capacity of dry air
         
@@ -134,13 +150,16 @@ class MoistAirProperties():
         
         '''
         
-        T_wb = self.convert.F_to_C( T_wb )
-        T_db = self.convert.F_to_C( T_db )
+        # T_wb = self.convert.F_to_C( T_wb )
+        T_wb = T_wb.to('degC')
+        # T_db = self.convert.F_to_C( T_db )
+        T_db = T_db.to('degC')
         
         # convert from J/kg-C to kJ/kg-C
-        Cp_dry_air = ( 0.0667 * ( T_db + T_wb ) / 2 + 1005 ) * 1e-3
+        Cp_dry_air = ( 0.0667 * ( T_db.magnitude + T_wb.magnitude ) / 2 + 1005 ) * 1e-3
+        Cp_dry_air = qty(Cp_dry_air, 'kJ / (kg * degC)')
         
-        return ( self.convert.kJ_kgK_2_Btu_lbF( Cp_dry_air ) )
+        return Cp_dry_air.to('Btu / (lb * degF)')
     
     
 def main():

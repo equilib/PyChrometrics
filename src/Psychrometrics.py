@@ -5,7 +5,7 @@ Pychrometrics - Imperial (English Units)
 Library of typical Psychrometric functions 
 
 ** Dependencies **
-1. Conversions.py - library of functions to convert between units
+1. pint - https://pint.readthedocs.io/en/stable/ (library for units)
 
 init development - 2017-09-30
 updates - 2024-01-07
@@ -14,30 +14,29 @@ updates - 2024-01-07
 @version: 1.0.0
 
 '''
-
-
 from PyChrometrics.src.Conversions import UnitConversions
+#from src.Conversions import UnitConversions
 
 from PyChrometrics.src.ThermodynamicProperties import MoistAirProperties
+#from src.ThermodynamicProperties import MoistAirProperties
 
-import pint
+from PyChrometrics.src.PintSetup import Quantity
 
-from math import exp
-from math import log
-from math import atan
+from math import exp, log, atan
+
+qty = Quantity
 
 class Pychrometrics():
     '''
     '''
-    qty = pint.UnitRegistry.Quantity        # qty points to pint Quantity comprised of magnitude and unit
-    u = pint.UnitRegistry()
+    #qty = pint.UnitRegistry.Quantity        # qty points to pint Quantity comprised of magnitude and unit
+    #u = pint.UnitRegistry()
     
     __properties = MoistAirProperties()
     convert = UnitConversions()
     __STD_ATM_PRESSURE = qty(14.696, 'psi')  # psia - std atm pressure at sea level (0 ft)
     __MIN_ELEV = qty(-1_400, 'ft')           # lowest acceptable elevation - Dead Sea (ft)  
     __MAX_ELEV = qty(30_000, 'ft')           # highest acceptable elevation - Mt. Everest (ft)
-    
     
     def __init__(self,
                  input_val : qty,
@@ -54,8 +53,8 @@ class Pychrometrics():
             self.__set_pressure(input_val)
 
 
-    def __set_elevation(self,
-                        elevation : qty):
+    def __set_elevation( self,
+                         elevation : qty):
         
         if self.__MIN_ELEV < elevation <= self.__MAX_ELEV:
             self.__elevation = elevation
@@ -75,20 +74,19 @@ class Pychrometrics():
             raise ValueError(f"Pressure is out of bounds. {MIN_PRES} < pressure <= {MAX_PRES}")
         
 
-    def P_atm_std(self,
-                  elevation : qty) -> float:
+    def P_atm_std( self,                   elevation : qty) -> float:
         '''
         return: atmospheric pressure at elevation in psia
         '''
-        k = self.qty(6.8754e-06, 'ft**-1')   # define const for calc of elevation
+        k = qty(6.8754e-06, 'ft**-1')   # define const for calc of elevation
 
         P_atm = self.__STD_ATM_PRESSURE * (1 - elevation * k) ** 5.2559
 
         return P_atm
     
-    def P_v_partial(self,
-                    T_db : qty,
-                    RH : qty ) -> qty:
+    def P_v_partial( self,
+                     T_db : qty,
+                     RH : qty ) -> qty:
         '''
         P_v_partial - vapor partial pressure
         '''
@@ -96,8 +94,8 @@ class Pychrometrics():
         
         return( RH * P_ws )
         
-    def P_v_sat(self, 
-                T_db : qty) -> qty:
+    def P_v_sat( self, 
+                 T_db : qty) -> qty:
         '''
         P_v_sat - saturated vapor partial pressure
         '''
@@ -138,7 +136,7 @@ class Pychrometrics():
 
         P_is = exp(ln_P_is)
 
-        P_is = self.qty(P_is, 'Pa')
+        P_is = qty(P_is, 'Pa')
 
         return( P_is.to('psi') )
         
@@ -174,13 +172,13 @@ class Pychrometrics():
 
         P_sat = exp(ln_P_sat)
 
-        P_sat = self.qty(P_sat, 'Pa')
+        P_sat = qty(P_sat, 'Pa')
 
         return( P_sat.to('psi') )
     
-    def T_wb_iter(self, 
-                  T_db : float,
-                  RH : float) -> float:
+    def T_wb_iter( self, 
+                   T_db : qty,
+                   RH : qty ) -> qty:
         ''' 
         wet bulb temperature - iterative method 
         
@@ -286,9 +284,9 @@ class Pychrometrics():
 
         return 100 * A/B
     
-    def W(self,
-          T_db : qty,
-          RH : qty ):
+    def W( self,
+           T_db : qty,
+           RH : qty ):
         '''
         Humidity Ratio: W - function calculates the humidity ratio given dry bulb temperature and relative humidity
         
@@ -307,7 +305,8 @@ class Pychrometrics():
         
         return ( MMR * ( Pws * RH /( P_atm - Pws * RH) ) ) # equation is from ASHRAE 2002 / 2005
     
-    def W_sat( self, T_db):
+    def W_sat( self, 
+               T_db : qty ):
         '''
         saturated humidity ratio: sat_W - function calculates the saturated humidity ratio based on dry bulb temperature
         
@@ -324,7 +323,9 @@ class Pychrometrics():
         
         return ( MMR * Pws /( P_atm - Pws ) ) # equation is from ASHRAE 2002 / 2005
     
-    def W0 ( self, Tdb, Twb ):
+    def W0 ( self, 
+             Tdb : qty,
+             Twb : qty ):
         
         '''
         W0 - humidity ratio calculation as a function of Tdb and Twb with variable specific heats for air, water, vapor
@@ -341,11 +342,11 @@ class Pychrometrics():
         
         '''
     
-        h_fg = self.__properties.h_fg()                # Latent Heat of Vaporization (Btu/lbm)
+        h_fg = self.__properties.h_fg()                        # Latent Heat of Vaporization (Btu/lbm)
         
-        Cp_w = self.__properties.Cp_water                                   # Cp of water function
-        Cp_da = self.__properties.Cp_dry_air                                # Cp of dry air function
-        Cp_v = self.__properties.Cp_vapor                                   # Cp of water vapor function
+        Cp_w = self.__properties.Cp_water                      # Cp of water function
+        Cp_da = self.__properties.Cp_dry_air                   # Cp of dry air function
+        Cp_v = self.__properties.Cp_vapor                      # Cp of water vapor function
         Ws_wb = self.W_sat                                     # saturated humidity ratio Ws(Twb)  
         
         a = ( ( h_fg - ( Cp_w( Twb ) - Cp_v( Tdb ) ) * Twb ) * Ws_wb( Twb ) - Cp_da( Tdb, Twb ) * ( Tdb - Twb ) )
