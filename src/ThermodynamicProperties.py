@@ -18,12 +18,11 @@ from PyChrometrics.src.Conversions import UnitConversions
 #from src.Conversions import UnitConversions
 
 from PyChrometrics.src.PintSetup import Quantity
+#from src.PintSetup import Quantity
 
 qty = Quantity
 
 class MoistAirProperties():
-    
-    convert = UnitConversions()
     
     #__Rda = 53.352                      # ft-lbf/(lb - R)
     __Rda = qty(53.352, 'ft * lbf / (lb * degR)')
@@ -45,6 +44,9 @@ class MoistAirProperties():
     __GRAINS_PER_LBM = qty(7000,'grains')               # 7000 grains of moisture per lbm of air
     __FREEZING_POINT = qty(32.0, 'degF')                # deg F - freezing point of pure water
     #__STD_ATM__PRESSURE = qty(14.696, 'psi')
+
+    def __init__(self):
+        pass
     
     def R_da( self ) -> qty:
         return self.__Rda
@@ -77,8 +79,8 @@ class MoistAirProperties():
         return self.__GRAINS_PER_LBM
     
 
-    def Cp_water( self, 
-                  T_wb : qty ) -> qty:
+    def Cp_water(self, 
+                 T_wb : qty ) -> qty:
         '''
         Cp_water - specific heat capacity of water
         
@@ -93,12 +95,10 @@ class MoistAirProperties():
         @return specific heat capacity of water (Btu/lbm-F)
         
         '''
-        
-        #T_wb = self.convert.F_to_C( T_wb )
         T_wb = T_wb.to('degC')
         
         # convert from J/kg-C to kJ/kg-C
-        Cp_w = ( 0.0265 * T_wb.magnitude ** 2 - 1.7688 * T_wb.magnitude + 4205.6 ) * 1e-3
+        Cp_w = ( 0.0265 * T_wb.m ** 2 - 1.7688 * T_wb.m + 4205.6 ) * 1e-3
         Cp_w = qty(Cp_w, 'kJ / (kg * K)')
         
         return Cp_w.to('Btu / (lb * degF)')
@@ -120,12 +120,10 @@ class MoistAirProperties():
         @return specific heat capacity of water vapor (Btu/lbm-F)
         
         '''
-        
-        #T_db = self.convert.F_to_C( T_db )
-        Tdb = Tdb.to('degC')
+        T_db = T_db.to('degC')
 
         # convert from J/kg-C to kJ/kg-C
-        Cp_vapor = ( 0.0016 * T_db.magnitude ** 2 + 0.1546 * T_db.magnitude + 1858.7 ) * 1e-3
+        Cp_vapor = ( 0.0016 * T_db.m ** 2 + 0.1546 * T_db.m + 1858.7 ) * 1e-3
         Cp_vapor = qty(Cp_vapor, 'kJ / (kg * K)')
         
         return Cp_vapor.to('Btu / (lb * degF)')
@@ -149,26 +147,14 @@ class MoistAirProperties():
         @return specific heat capacity of water vapor (Btu/lbm-F)
         
         '''
-        
-        # T_wb = self.convert.F_to_C( T_wb )
         T_wb = T_wb.to('degC')
-        # T_db = self.convert.F_to_C( T_db )
         T_db = T_db.to('degC')
         
         # convert from J/kg-C to kJ/kg-C
-        Cp_dry_air = ( 0.0667 * ( T_db.magnitude + T_wb.magnitude ) / 2 + 1005 ) * 1e-3
+        Cp_dry_air = ( 0.0667 * ( T_db.m + T_wb.m ) / 2 + 1005 ) * 1e-3
         Cp_dry_air = qty(Cp_dry_air, 'kJ / (kg * degC)')
         
         return Cp_dry_air.to('Btu / (lb * degF)')
-    
-    
-def main():
-    
-    props = MoistAirProperties()
-    
-    print( props.Cp_dry_air(50, 0.55) )
-    
-if __name__ == "__main__":
-    main()
+
 
 
